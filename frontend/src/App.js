@@ -1,56 +1,60 @@
-import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { AppShell } from "@/components/AppShell";
+import { Toaster } from "@/components/ui/sonner";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { HOME } from "@/constants/testIds";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
+import IPIntel from "@/pages/tools/IPIntel";
+import URLScan from "@/pages/tools/URLScan";
+import EmailForensics from "@/pages/tools/EmailForensics";
+import HashVerify from "@/pages/tools/HashVerify";
+import CaseReport from "@/pages/tools/CaseReport";
+import HistoryPage from "@/pages/History";
+import AnalysisDetail from "@/pages/AnalysisDetail";
+import Cases from "@/pages/Cases";
+import CaseDetail from "@/pages/CaseDetail";
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
+function Protected({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="cs-shell grid min-h-screen place-items-center">
+        <div className="cs-blink text-sm text-[var(--cs-muted)]">Loading Cyber Shield…</div>
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  return <AppShell>{children}</AppShell>;
+}
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
+function AppRoutes() {
   return (
-    <div>
-      <header className="App-header">
-        <a
-          data-testid={HOME.emergentLink}
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
-
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Protected><Dashboard /></Protected>} />
+      <Route path="/tools/ip-intel" element={<Protected><IPIntel /></Protected>} />
+      <Route path="/tools/url-scan" element={<Protected><URLScan /></Protected>} />
+      <Route path="/tools/email-forensics" element={<Protected><EmailForensics /></Protected>} />
+      <Route path="/tools/hash-verify" element={<Protected><HashVerify /></Protected>} />
+      <Route path="/tools/case-report" element={<Protected><CaseReport /></Protected>} />
+      <Route path="/history" element={<Protected><HistoryPage /></Protected>} />
+      <Route path="/history/:id" element={<Protected><AnalysisDetail /></Protected>} />
+      <Route path="/cases" element={<Protected><Cases /></Protected>} />
+      <Route path="/cases/:id" element={<Protected><CaseDetail /></Protected>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+        <Toaster position="top-right" theme="dark" richColors closeButton />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

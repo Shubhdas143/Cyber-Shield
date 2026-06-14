@@ -1,34 +1,30 @@
 [
   {
-    "content": "Phase 1: Core POC - Claude Sonnet 4.6 (Emergent key) + IP geolocation + hashlib + PDF generation in one script",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 1: Run POC and fix until all 4 core pieces pass",
+    "content": "Phase 1: Core POC - all 4 pieces passed",
     "status": "completed"
   },
   {
     "content": "Phase 2: Get design guidelines from design_agent",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Backend - 5 tool endpoints, history, cases, reports, stats, PDF export",
-    "status": "pending"
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: JWT auth (officer login) + seed account + demo bypass",
+    "status": "completed"
   },
   {
     "content": "Phase 2: Frontend - Login, Dashboard, 5 tool pages, History, Case/Report views, Coming Soon banner",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 2: JWT auth (officer login) + seed account + test bypass",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: All user stories covered in development",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: End-to-End testing using testing agent",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
