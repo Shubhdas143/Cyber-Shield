@@ -11,6 +11,10 @@ import URLScan from "@/pages/tools/URLScan";
 import EmailForensics from "@/pages/tools/EmailForensics";
 import HashVerify from "@/pages/tools/HashVerify";
 import CaseReport from "@/pages/tools/CaseReport";
+import PortScan from "@/pages/tools/PortScan";
+import IPv6Convert from "@/pages/tools/IPv6Convert";
+import BreachCheck from "@/pages/tools/BreachCheck";
+import ToolsDirectory from "@/pages/ToolsDirectory";
 import HistoryPage from "@/pages/History";
 import AnalysisDetail from "@/pages/AnalysisDetail";
 import Cases from "@/pages/Cases";
@@ -38,7 +42,11 @@ function AppRoutes() {
       <Route path="/tools/url-scan" element={<Protected><URLScan /></Protected>} />
       <Route path="/tools/email-forensics" element={<Protected><EmailForensics /></Protected>} />
       <Route path="/tools/hash-verify" element={<Protected><HashVerify /></Protected>} />
+      <Route path="/tools/port-scan" element={<Protected><PortScan /></Protected>} />
+      <Route path="/tools/ipv6-convert" element={<Protected><IPv6Convert /></Protected>} />
+      <Route path="/tools/breach-check" element={<Protected><BreachCheck /></Protected>} />
       <Route path="/tools/case-report" element={<Protected><CaseReport /></Protected>} />
+      <Route path="/tools-directory" element={<Protected><ToolsDirectory /></Protected>} />
       <Route path="/history" element={<Protected><HistoryPage /></Protected>} />
       <Route path="/history/:id" element={<Protected><AnalysisDetail /></Protected>} />
       <Route path="/cases" element={<Protected><Cases /></Protected>} />

@@ -49,6 +49,24 @@ class HashCompareRequest(BaseModel):
     case_id: Optional[str] = None
 
 
+class PortScanRequest(BaseModel):
+    target: str
+    mode: str = "common"  # "common" | "common_range"
+    start_port: Optional[int] = None
+    end_port: Optional[int] = None
+    case_id: Optional[str] = None
+
+
+class IPv6ConvertRequest(BaseModel):
+    ip: str
+    case_id: Optional[str] = None
+
+
+class BreachCheckRequest(BaseModel):
+    password: str
+    case_id: Optional[str] = None
+
+
 class CaseReportRequest(BaseModel):
     case_no: Optional[str] = ""
     date: Optional[str] = ""

@@ -18,7 +18,8 @@ async def get_stats(user: dict = Depends(get_current_user)):
     recent = await analyses.find({}, {"_id": 0, "input": 0}).sort("created_at", -1).to_list(10)
 
     breakdown = {}
-    for t in ["ip-intel", "url-scan", "email-forensics", "hash-verify", "case-report"]:
+    for t in ["ip-intel", "url-scan", "email-forensics", "hash-verify", "case-report",
+              "port-scan", "ipv6-convert", "breach-verify"]:
         breakdown[t] = await analyses.count_documents({"tool_type": t})
 
     return {

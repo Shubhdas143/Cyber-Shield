@@ -10,7 +10,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 from database import client  # noqa: E402
 from auth import seed_default_officer  # noqa: E402
-import routes_auth, routes_tools, routes_history, routes_cases, routes_stats  # noqa: E402
+import routes_auth, routes_tools, routes_history, routes_cases, routes_stats, routes_catalog  # noqa: E402
 
 app = FastAPI(title="Cyber Shield API", version="1.0")
 
@@ -33,6 +33,7 @@ api_router.include_router(routes_tools.router)
 api_router.include_router(routes_history.router)
 api_router.include_router(routes_cases.router)
 api_router.include_router(routes_stats.router)
+api_router.include_router(routes_catalog.router)
 
 app.include_router(api_router)
 

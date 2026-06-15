@@ -184,6 +184,74 @@ Do NOT include a RISK_LEVEL line. Use this structure:
     return clean
 
 
+# ------------------------------------------------------------------ PORT SCAN
+async def analyze_ports(target: str, ip: str, open_ports: list, scanned: int):
+    if open_ports:
+        ports_ctx = "\n".join(
+            f"- Port {p['port']}/tcp — {p['service']} (open)" for p in open_ports
+        )
+    else:
+        ports_ctx = "- No open TCP ports detected in the scanned set."
+
+    prompt = f"""Analyze the results of a TCP port scan for an Indian cybercrime investigation.
+
+Target: {target}
+Resolved IP: {ip}
+Ports scanned: {scanned}
+Open ports found:
+{ports_ctx}
+
+The VERY FIRST line must be:
+RISK_LEVEL: <CRITICAL|HIGH|MEDIUM|LOW|CLEAN>
+
+## EXPOSURE SUMMARY
+State the level and a one-line justification based on the open services.
+
+## OPEN SERVICE ANALYSIS
+- For each notable open port: what the service is and the risk it introduces (e.g., exposed RDP/SMB/database, plaintext protocols). If none open, say so.
+
+## INDICATORS OF CONCERN
+- Dangerous exposures (e.g., 3389 RDP, 445 SMB, 23 Telnet, 3306/5432/27017/6379 databases) or "None detected".
+
+## INVESTIGATIVE ACTIONS
+- Concrete next steps for the officer (service banner grabbing, preservation, notice to hosting provider).
+
+## APPLICABLE IT ACT SECTIONS
+- Relevant sections if the exposure relates to an offence, else "N/A — informational reconnaissance".
+"""
+    text = await _run(f"portscan-{abs(hash(target + ip)) % 99999}", prompt, max_tokens=1800)
+    return _split_risk(text)
+
+
+# ------------------------------------------------------------------ BREACH CHECK
+async def analyze_breach(found: bool, count: int, strength_label: str):
+    status = (f"This password was found in {count:,} known data-breach records."
+              if found else "This password was NOT found in the known breach corpus.")
+    prompt = f"""An officer checked a password against the global breach corpus (HaveIBeenPwned Pwned Passwords).
+The plaintext password is NOT shared with you — only the breach result.
+
+Result: {status}
+Local strength assessment: {strength_label}
+
+Do NOT include a RISK_LEVEL line. Provide a concise advisory:
+
+## VERDICT
+- One line on whether this password is safe to use.
+
+## WHAT THIS MEANS
+- Explain breach exposure and credential-stuffing / account-takeover risk for an investigation context.
+
+## RECOMMENDED ACTIONS
+- Steps for the officer / complainant (rotate credentials, enable 2FA, check linked accounts, preserve evidence of account compromise).
+
+## INVESTIGATIVE RELEVANCE
+- How a breached password is relevant when investigating an account-takeover or unauthorised-access complaint (reference Section 43 / 66 IT Act where access was unauthorised).
+"""
+    text = await _run(f"breach-{count}-{found}", prompt, max_tokens=900)
+    _, clean = _split_risk(text)
+    return clean
+
+
 # ------------------------------------------------------------------ CASE REPORT
 async def generate_case_report(f: dict):
     prompt = f"""Generate a formal cybercrime CASE REPORT for Indian law enforcement, suitable for FIR documentation and court proceedings.

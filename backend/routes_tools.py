@@ -1,4 +1,6 @@
 import hashlib
+import socket
+import ipaddress
 from urllib.parse import urlparse
 import re
 
@@ -8,11 +10,15 @@ from typing import Optional
 from database import analyses, cases
 from models import (
     IPIntelRequest, URLScanRequest, EmailForensicsRequest, HashCompareRequest,
-    CaseReportRequest, new_id, now_iso,
+    CaseReportRequest, PortScanRequest, IPv6ConvertRequest, BreachCheckRequest,
+    new_id, now_iso,
 )
 from auth import get_current_user
 import llm_service
 import geo_service
+import scan_service
+import convert_service
+import breach_service
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
@@ -197,4 +203,107 @@ async def case_report(req: CaseReportRequest, user: dict = Depends(get_current_u
         "result_markdown": markdown,
         "risk_level": None,
         "meta": {"case_no": req.case_no, "victim": req.victim, "platform": req.platform},
+    }, user, req.case_id)
+
+
+@router.post("/port-scan")
+async def port_scan(req: PortScanRequest, user: dict = Depends(get_current_user)):
+    target = req.target.strip()
+    if not target:
+        raise HTTPException(status_code=400, detail="Please enter a target host or IP address")
+    # strip scheme if a URL was pasted
+    if "://" in target:
+        target = urlparse(target).hostname or target
+    mode = req.mode if req.mode in ("common", "common_range") else "common"
+    try:
+        ports, note = scan_service.build_port_list(mode, req.start_port, req.end_port)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    try:
+        scan = await scan_service.scan_ports(target, ports)
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail="Hostname could not be resolved")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Scan failed: {e}")
+
+    risk, markdown = await llm_service.analyze_ports(
+        target, scan["ip"], scan["open_ports"], scan["scanned"]
+    )
+    open_list = ", ".join(str(p["port"]) for p in scan["open_ports"]) or "none"
+    return await save_analysis({
+        "tool_type": "port-scan",
+        "title": f"Port Scan — {target}",
+        "target": f"{target} ({scan['ip']})",
+        "input": {"target": target, "mode": mode, "start_port": req.start_port, "end_port": req.end_port},
+        "result_markdown": markdown,
+        "risk_level": risk,
+        "meta": {
+            "ip": scan["ip"],
+            "open_ports": scan["open_ports"],
+            "open_summary": open_list,
+            "scanned": scan["scanned"],
+            "closed_count": scan["closed_count"],
+            "mode": mode,
+            "note": note,
+        },
+    }, user, req.case_id)
+
+
+@router.post("/ipv6-convert")
+async def ipv6_convert(req: IPv6ConvertRequest, user: dict = Depends(get_current_user)):
+    ip = req.ip.strip()
+    try:
+        ipaddress.IPv4Address(ip)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Please enter a valid IPv4 address (e.g. 103.21.58.10)")
+    conv = convert_service.ipv4_to_ipv6(ip)
+    markdown = convert_service.build_markdown(conv)
+    return await save_analysis({
+        "tool_type": "ipv6-convert",
+        "title": f"IPv4 → IPv6 — {ip}",
+        "target": ip,
+        "input": {"ip": ip},
+        "result_markdown": markdown,
+        "risk_level": None,
+        "meta": {"conversions": conv},
+    }, user, req.case_id)
+
+
+@router.post("/breach-check")
+async def breach_check(req: BreachCheckRequest, user: dict = Depends(get_current_user)):
+    password = req.password or ""
+    if len(password) < 1:
+        raise HTTPException(status_code=400, detail="Please enter a password to check")
+    try:
+        result = await breach_service.check_password(password)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Breach lookup failed: {e}")
+
+    strength = breach_service.strength_hint(password)
+    markdown = await llm_service.analyze_breach(result["found"], result["count"], strength["label"])
+
+    if result["count"] >= 100000:
+        risk = "critical"
+    elif result["count"] >= 1000:
+        risk = "high"
+    elif result["count"] > 0:
+        risk = "medium"
+    else:
+        risk = "clean"
+
+    # IMPORTANT: never persist the plaintext password — store only metadata.
+    return await save_analysis({
+        "tool_type": "breach-verify",
+        "title": "Password Breach Check",
+        "target": f"Password ({strength['length']} chars · {strength['label']})",
+        "input": {"length": strength["length"], "note": "plaintext not stored"},
+        "result_markdown": markdown,
+        "risk_level": risk,
+        "meta": {
+            "found": result["found"],
+            "count": result["count"],
+            "strength": strength["label"],
+            "char_classes": strength["char_classes"],
+        },
     }, user, req.case_id)

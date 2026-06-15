@@ -1,4 +1,4 @@
-import { Globe, Link2, Mail, Hash, FileText } from "lucide-react";
+import { Globe, Link2, Mail, Hash, FileText, Network, ArrowRightLeft, KeyRound } from "lucide-react";
 
 export const TOOLS = [
   {
@@ -29,6 +29,15 @@ export const TOOLS = [
     hint: "Analyse raw email headers",
   },
   {
+    id: "port-scan",
+    path: "/tools/port-scan",
+    label: "Port Scanner",
+    short: "Port Scanner",
+    icon: Network,
+    desc: "Scan a host for open TCP ports and assess exposure.",
+    hint: "Map exposed services on a host",
+  },
+  {
     id: "hash-verify",
     path: "/tools/hash-verify",
     label: "Hash Verifier",
@@ -36,6 +45,24 @@ export const TOOLS = [
     icon: Hash,
     desc: "Compute & compare hashes for evidence integrity.",
     hint: "Verify digital evidence",
+  },
+  {
+    id: "ipv6-convert",
+    path: "/tools/ipv6-convert",
+    label: "IPv4 → IPv6 Converter",
+    short: "IPv6 Converter",
+    icon: ArrowRightLeft,
+    desc: "Convert an IPv4 address to mapped, 6to4 and compatible IPv6 forms.",
+    hint: "Translate IPv4 to IPv6",
+  },
+  {
+    id: "breach-verify",
+    path: "/tools/breach-check",
+    label: "Password Breach Checker",
+    short: "Breach Checker",
+    icon: KeyRound,
+    desc: "Check a password against known breach corpora (privacy-safe).",
+    hint: "Test credentials for exposure",
   },
   {
     id: "case-report",
@@ -52,6 +79,15 @@ export const TOOL_MAP = TOOLS.reduce((acc, t) => ((acc[t.id] = t), acc), {});
 
 export const COMING_SOON = [
   { label: "Phone / UPI Fraud Lookup", desc: "Trace mobile numbers and UPI IDs linked to fraud." },
-  { label: "Password Breach Checker", desc: "Check credentials against known breach corpora." },
   { label: "Bulk IP / URL Analysis", desc: "Upload a CSV and triage indicators in batch." },
+  { label: "Dark Web Exposure Monitor", desc: "Watch breach dumps & forums for leaked data." },
+  { label: "Crypto Wallet Tracer", desc: "Follow cryptocurrency fund flows across the blockchain." },
+  { label: "Image & EXIF Forensics", desc: "Extract GPS, device and edit metadata from media." },
+  { label: "Social Media OSINT Profiler", desc: "Aggregate a suspect's public social footprint." },
+  { label: "WHOIS & Domain Intelligence", desc: "Pull registration, history and DNS records." },
+  { label: "SSL/TLS Certificate Inspector", desc: "Inspect certificates and detect impersonation." },
+  { label: "Malware Sandbox Detonation", desc: "Detonate suspicious files in isolation safely." },
+  { label: "Call Detail Record Analyzer", desc: "Visualise CDR / IPDR links and timelines." },
+  { label: "IMEI / Device Tracker", desc: "Resolve device identity and last-seen networks." },
+  { label: "DNS & Subdomain Recon", desc: "Enumerate subdomains and exposed assets." },
 ];

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Activity, AlertOctagon, FolderKanban, ScanLine, ArrowRight, ChevronRight } from "lucide-react";
+import { Activity, AlertOctagon, FolderKanban, ScanLine, ArrowRight, ChevronRight, LibraryBig } from "lucide-react";
 import api from "@/lib/api";
 import { TOOLS, TOOL_MAP } from "@/lib/tools";
 import { useAuth } from "@/context/AuthContext";
@@ -110,6 +110,18 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <Link to="/tools-directory" data-testid="dashboard-tools-directory-cta"
+        className="group flex items-center gap-4 rounded-[var(--cs-radius-lg)] border border-[var(--cs-border)] bg-[var(--cs-surface)] p-4 transition-colors hover:border-[rgba(56,189,248,0.5)] hover:bg-[var(--cs-surface-2)]">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--cs-radius-md)] border border-[rgba(56,189,248,0.3)] bg-[rgba(56,189,248,0.1)] text-[var(--cs-primary-2)]">
+          <LibraryBig size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-sm font-semibold text-[var(--cs-text)]">Cyber Tools Directory</div>
+          <p className="mt-0.5 text-xs text-[var(--cs-muted)]">Browse AI-agentic, AI-assisted & open-source investigation tools used by cyber police — with usage and best-case scenarios.</p>
+        </div>
+        <ArrowRight size={16} className="shrink-0 text-[var(--cs-muted)] transition-transform group-hover:translate-x-0.5" />
+      </Link>
 
       <ComingSoon />
     </div>

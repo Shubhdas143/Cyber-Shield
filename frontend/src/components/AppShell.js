@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Shield, LayoutDashboard, History, FolderKanban, LogOut, Menu, Radar, Plus } from "lucide-react";
+import { Shield, LayoutDashboard, History, FolderKanban, LogOut, Menu, Radar, Plus, LibraryBig } from "lucide-react";
 import { TOOLS } from "@/lib/tools";
 import { useAuth } from "@/context/AuthContext";
 import { AshokaLine } from "@/components/AshokaLine";
@@ -62,6 +62,12 @@ function SidebarBody({ onNavigate }) {
           <div className="space-y-1">
             <NavItem to="/history" icon={History} label="Investigation History" onClick={onNavigate} testId="nav-history" />
             <NavItem to="/cases" icon={FolderKanban} label="Cases" onClick={onNavigate} testId="nav-cases" />
+          </div>
+        </div>
+        <div>
+          <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cs-muted)]/70">Reference</div>
+          <div className="space-y-1">
+            <NavItem to="/tools-directory" icon={LibraryBig} label="Tools Directory" onClick={onNavigate} testId="nav-tools-directory" />
           </div>
         </div>
       </nav>
@@ -136,6 +142,7 @@ function pageTitle(path) {
   if (path === "/") return "Operations Dashboard";
   if (path.startsWith("/history")) return "Investigation History";
   if (path.startsWith("/cases")) return "Case Management";
+  if (path.startsWith("/tools-directory")) return "Cyber Tools Directory";
   const t = TOOLS.find((x) => path.startsWith(x.path));
   return t ? t.label : "Cyber Shield";
 }

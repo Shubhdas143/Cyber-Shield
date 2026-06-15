@@ -21,6 +21,9 @@ TOOL_LABELS = {
     "email-forensics": "Email Header Forensics",
     "hash-verify": "Digital Evidence Hash Verification",
     "case-report": "Cyber Crime Case Report",
+    "port-scan": "Network Port Scan Analysis",
+    "ipv6-convert": "IPv4 to IPv6 Conversion",
+    "breach-verify": "Password Breach Verification",
 }
 
 
