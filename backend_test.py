@@ -8,7 +8,7 @@ import sys
 import time
 from datetime import datetime
 
-BASE_URL = "https://cyber-crime-tools.preview.emergentagent.com/api"
+BASE_URL = "https://cyber-tools-suite.preview.emergentagent.com/api"
 OFFICER_ID = "amroha001"
 PASSWORD = "cyber@123"
 
