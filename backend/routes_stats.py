@@ -19,7 +19,8 @@ async def get_stats(user: dict = Depends(get_current_user)):
 
     breakdown = {}
     for t in ["ip-intel", "url-scan", "email-forensics", "hash-verify", "case-report",
-              "port-scan", "ipv6-convert", "breach-verify"]:
+              "port-scan", "ipv6-convert", "breach-verify",
+              "exif-forensics", "dark-web", "ssl-inspect", "imei-track", "dns-recon"]:
         breakdown[t] = await analyses.count_documents({"tool_type": t})
 
     return {

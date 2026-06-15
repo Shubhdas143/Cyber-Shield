@@ -1,5 +1,6 @@
 import hashlib
 import socket
+import ssl
 import ipaddress
 from urllib.parse import urlparse
 import re
@@ -11,6 +12,7 @@ from database import analyses, cases
 from models import (
     IPIntelRequest, URLScanRequest, EmailForensicsRequest, HashCompareRequest,
     CaseReportRequest, PortScanRequest, IPv6ConvertRequest, BreachCheckRequest,
+    DarkWebRequest, SSLRequest, IMEIRequest, DNSReconRequest,
     new_id, now_iso,
 )
 from auth import get_current_user
@@ -19,6 +21,10 @@ import geo_service
 import scan_service
 import convert_service
 import breach_service
+import exif_service
+import ssl_service
+import imei_service
+import dns_service
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
@@ -306,4 +312,138 @@ async def breach_check(req: BreachCheckRequest, user: dict = Depends(get_current
             "strength": strength["label"],
             "char_classes": strength["char_classes"],
         },
+    }, user, req.case_id)
+
+
+
+@router.post("/exif-forensics")
+async def exif_forensics(
+    file: UploadFile = File(...),
+    case_id: Optional[str] = Form(None),
+    user: dict = Depends(get_current_user),
+):
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty file uploaded")
+    if len(data) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image too large (max 25 MB)")
+    try:
+        meta = exif_service.extract_exif(data, file.filename or "image")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not read this file as an image")
+
+    has_gps = bool(meta.get("coords"))
+    ctx = exif_service.build_context(meta)
+    markdown = await llm_service.analyze_exif(ctx, has_gps)
+
+    return await save_analysis({
+        "tool_type": "exif-forensics",
+        "title": f"EXIF Forensics — {file.filename}",
+        "target": file.filename or "image",
+        "input": {"filename": file.filename, "size_kb": round(len(data) / 1024, 2)},
+        "result_markdown": markdown,
+        "risk_level": None,
+        "meta": meta,
+    }, user, case_id)
+
+
+@router.post("/dark-web")
+async def dark_web(req: DarkWebRequest, user: dict = Depends(get_current_user)):
+    ident = req.identifier.strip()
+    if not ident:
+        raise HTTPException(status_code=400, detail="Please enter an email address or domain")
+    kind = "email" if re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", ident) else "domain"
+    risk, markdown = await llm_service.analyze_darkweb(ident, kind)
+    return await save_analysis({
+        "tool_type": "dark-web",
+        "title": f"Dark Web Exposure — {ident}",
+        "target": ident,
+        "input": {"identifier": ident, "kind": kind},
+        "result_markdown": markdown,
+        "risk_level": risk,
+        "meta": {"kind": kind, "advisory": True},
+    }, user, req.case_id)
+
+
+@router.post("/ssl-inspect")
+async def ssl_inspect(req: SSLRequest, user: dict = Depends(get_current_user)):
+    host = req.host.strip()
+    if not host:
+        raise HTTPException(status_code=400, detail="Please enter a host / domain")
+    if "://" in host:
+        host = urlparse(host).hostname or host
+    host = host.split("/")[0].split(":")[0]
+    try:
+        cert = await ssl_service.inspect(host, 443)
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail="Hostname could not be resolved")
+    except (ssl.SSLError, ConnectionError, OSError, TimeoutError) as e:
+        raise HTTPException(status_code=502, detail=f"Could not establish a TLS connection: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Certificate inspection failed: {e}")
+
+    ctx = ssl_service.build_context(cert)
+    risk, markdown = await llm_service.analyze_ssl(ctx)
+    if cert.get("is_expired") or cert.get("self_signed") or cert.get("not_yet_valid"):
+        if risk in (None, "clean", "low"):
+            risk = "high"
+    return await save_analysis({
+        "tool_type": "ssl-inspect",
+        "title": f"SSL/TLS Inspection — {host}",
+        "target": host,
+        "input": {"host": host},
+        "result_markdown": markdown,
+        "risk_level": risk,
+        "meta": {"certificate": cert},
+    }, user, req.case_id)
+
+
+@router.post("/imei-track")
+async def imei_track(req: IMEIRequest, user: dict = Depends(get_current_user)):
+    try:
+        parsed = imei_service.parse_imei(req.imei)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    ctx = imei_service.build_context(parsed)
+    markdown = await llm_service.analyze_imei(ctx)
+    return await save_analysis({
+        "tool_type": "imei-track",
+        "title": f"IMEI Analysis — {parsed['imei']}",
+        "target": parsed["imei"],
+        "input": {"imei": parsed["imei"]},
+        "result_markdown": markdown,
+        "risk_level": None,
+        "meta": parsed,
+    }, user, req.case_id)
+
+
+@router.post("/dns-recon")
+async def dns_recon(req: DNSReconRequest, user: dict = Depends(get_current_user)):
+    domain = req.domain.strip().lower()
+    if not domain:
+        raise HTTPException(status_code=400, detail="Please enter a domain")
+    if "://" in domain:
+        domain = urlparse(domain).hostname or domain
+    domain = domain.split("/")[0]
+    if domain.startswith("www."):
+        domain = domain[4:]
+    try:
+        result = await dns_service.recon(domain)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"DNS recon failed: {e}")
+
+    has_any = any(result["records"].get(rt) for rt in dns_service.RECORD_TYPES)
+    if not has_any and not result["subdomains"]:
+        raise HTTPException(status_code=400, detail="No DNS records found — check the domain is valid")
+
+    ctx = dns_service.build_context(result)
+    risk, markdown = await llm_service.analyze_dns(ctx)
+    return await save_analysis({
+        "tool_type": "dns-recon",
+        "title": f"DNS & Subdomain Recon — {domain}",
+        "target": domain,
+        "input": {"domain": domain},
+        "result_markdown": markdown,
+        "risk_level": risk,
+        "meta": result,
     }, user, req.case_id)

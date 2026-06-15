@@ -67,6 +67,26 @@ class BreachCheckRequest(BaseModel):
     case_id: Optional[str] = None
 
 
+class DarkWebRequest(BaseModel):
+    identifier: str
+    case_id: Optional[str] = None
+
+
+class SSLRequest(BaseModel):
+    host: str
+    case_id: Optional[str] = None
+
+
+class IMEIRequest(BaseModel):
+    imei: str
+    case_id: Optional[str] = None
+
+
+class DNSReconRequest(BaseModel):
+    domain: str
+    case_id: Optional[str] = None
+
+
 class CaseReportRequest(BaseModel):
     case_no: Optional[str] = ""
     date: Optional[str] = ""

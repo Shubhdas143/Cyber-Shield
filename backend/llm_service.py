@@ -252,6 +252,148 @@ Do NOT include a RISK_LEVEL line. Provide a concise advisory:
     return clean
 
 
+# ------------------------------------------------------------------ EXIF
+async def analyze_exif(context: str, has_gps: bool):
+    prompt = f"""Analyze the metadata extracted from a media file for an Indian cybercrime investigation.
+
+{context}
+
+Do NOT include a RISK_LEVEL line. Use this structure:
+
+## METADATA SUMMARY
+- Key device, timestamp and software findings (state "Not present" where missing).
+
+## GEOLOCATION
+- {"Interpret the embedded GPS coordinates and what they reveal about where the media was captured. Include the coordinates and map reference." if has_gps else "No GPS coordinates were embedded. Note that absence of geotags does not prove the location and suggest alternative geolocation avenues."}
+
+## AUTHENTICITY & TAMPERING INDICATORS
+- Note editing software, missing/inconsistent timestamps or stripped metadata that may indicate manipulation.
+
+## INVESTIGATIVE VALUE
+- How these artefacts can corroborate or refute a complaint (device identification, timeline, source).
+
+## EVIDENCE HANDLING
+- Preservation steps and the Section 65B (Indian Evidence Act) certificate requirement for electronic records.
+"""
+    text = await _run(f"exif-{abs(hash(context)) % 99999}", prompt, max_tokens=1400)
+    _, clean = _split_risk(text)
+    return clean
+
+
+# ------------------------------------------------------------------ DARK WEB / EXPOSURE
+async def analyze_darkweb(identifier: str, kind: str):
+    prompt = f"""An officer is assessing the breach / dark-web exposure risk of an {kind} during an Indian cybercrime investigation.
+
+{kind.upper()}: {identifier}
+
+You do NOT have a live dark-web feed. Provide an evidence-based risk ADVISORY (never invent specific breach records or fabricate data).
+
+The VERY FIRST line must be:
+RISK_LEVEL: <CRITICAL|HIGH|MEDIUM|LOW|CLEAN>
+
+## EXPOSURE RISK ASSESSMENT
+State the likely exposure level and reasoning (domain type, public-facing nature, common targeting).
+
+## LIKELY EXPOSURE VECTORS
+- Where credentials/data for this identifier are commonly exposed (breach dumps, combo lists, paste sites, forums) — general, not fabricated.
+
+## VERIFICATION STEPS (AUTHORITATIVE SOURCES)
+- Concrete checks the officer should run (HaveIBeenPwned account search, paid intel like DeHashed/Intelligence X with proper authorisation, internal CERT-In coordination).
+
+## RECOMMENDED PROTECTIVE ACTIONS
+- Steps for the complainant/victim (credential rotation, 2FA, monitoring).
+
+## APPLICABLE IT ACT SECTIONS
+- e.g. Sections 43, 66, 66C — or "N/A".
+"""
+    text = await _run(f"darkweb-{abs(hash(identifier)) % 99999}", prompt, max_tokens=1500)
+    return _split_risk(text)
+
+
+# ------------------------------------------------------------------ SSL / TLS
+async def analyze_ssl(context: str):
+    prompt = f"""Analyze this TLS/SSL certificate for an Indian cybercrime investigation (e.g., a phishing or impersonation case).
+
+{context}
+
+The VERY FIRST line must be:
+RISK_LEVEL: <CRITICAL|HIGH|MEDIUM|LOW|CLEAN>
+
+## CERTIFICATE VERDICT
+**Trust:** Valid / Suspicious / Untrusted — one-line reason.
+
+## KEY FINDINGS
+- Issuer trust, validity window, expiry, self-signed status, weak signature algorithms, TLS version.
+
+## IMPERSONATION INDICATORS
+- Mismatched/over-broad SAN entries, brand look-alikes, free/short-lived certs used to host phishing — or "None detected".
+
+## RECOMMENDED ACTIONS
+- Investigative steps (preserve cert, correlate with hosting/registrar, takedown/notice).
+
+## APPLICABLE IT ACT SECTIONS
+- e.g. Sections 66, 66C, 66D — or "N/A".
+"""
+    text = await _run(f"ssl-{abs(hash(context)) % 99999}", prompt, max_tokens=1600)
+    return _split_risk(text)
+
+
+# ------------------------------------------------------------------ IMEI
+async def analyze_imei(context: str):
+    prompt = f"""An officer is analysing a device IMEI in an Indian cybercrime investigation (e.g., a stolen phone or device used in fraud).
+
+{context}
+
+Do NOT include a RISK_LEVEL line. Use this structure:
+
+## IMEI VALIDITY
+- State whether the IMEI is structurally valid (Luhn) and what an invalid checksum could imply (cloning/tampering).
+
+## STRUCTURE BREAKDOWN
+- Explain the TAC, reporting body, serial and check digit in plain terms.
+
+## DEVICE IDENTIFICATION
+- What the TAC can reveal about make/model and how to confirm it (GSMA TAC database, manufacturer).
+
+## LAWFUL TRACKING PROCESS (INDIA)
+- The correct procedure: CEIR portal (ceir.gov.in) for blocking/tracing, request to DoT/TSPs, and Section 91 CrPC / BNSS production orders. Emphasise that real-time location requires lawful telecom assistance.
+
+## RECOMMENDED ACTIONS
+- Practical next steps and evidence preservation.
+"""
+    text = await _run(f"imei-{abs(hash(context)) % 99999}", prompt, max_tokens=1300)
+    _, clean = _split_risk(text)
+    return clean
+
+
+# ------------------------------------------------------------------ DNS RECON
+async def analyze_dns(context: str):
+    prompt = f"""Analyze these DNS records and discovered subdomains for an Indian cybercrime investigation.
+
+{context}
+
+The VERY FIRST line must be:
+RISK_LEVEL: <CRITICAL|HIGH|MEDIUM|LOW|CLEAN>
+
+## INFRASTRUCTURE SUMMARY
+- Hosting/mail providers, name servers and what they indicate.
+
+## ATTACK SURFACE
+- Notable exposed subdomains (admin, vpn, dev, mail, etc.) and the risk each introduces — or "None notable".
+
+## INDICATORS OF CONCERN
+- SPF/DMARC presence in TXT, suspicious hosting, fast-flux/parking signs — or "None detected".
+
+## INVESTIGATIVE ACTIONS
+- Next steps (preserve records, WHOIS correlation, notice to hosting/registrar).
+
+## APPLICABLE IT ACT SECTIONS
+- relevant sections if suspicious, else "N/A".
+"""
+    text = await _run(f"dns-{abs(hash(context)) % 99999}", prompt, max_tokens=1700)
+    return _split_risk(text)
+
+
 # ------------------------------------------------------------------ CASE REPORT
 async def generate_case_report(f: dict):
     prompt = f"""Generate a formal cybercrime CASE REPORT for Indian law enforcement, suitable for FIR documentation and court proceedings.

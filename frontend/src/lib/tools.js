@@ -1,4 +1,7 @@
-import { Globe, Link2, Mail, Hash, FileText, Network, ArrowRightLeft, KeyRound } from "lucide-react";
+import {
+  Globe, Link2, Mail, Hash, FileText, Network, ArrowRightLeft, KeyRound,
+  Globe2, LockKeyhole, Image, Bug, Smartphone,
+} from "lucide-react";
 
 export const TOOLS = [
   {
@@ -20,13 +23,22 @@ export const TOOLS = [
     hint: "Inspect suspicious links",
   },
   {
-    id: "email-forensics",
-    path: "/tools/email-forensics",
-    label: "Email Header Forensics",
-    short: "Email Forensics",
-    icon: Mail,
-    desc: "Trace origin, detect spoofing and map routing.",
-    hint: "Analyse raw email headers",
+    id: "dns-recon",
+    path: "/tools/dns-recon",
+    label: "DNS & Subdomain Recon",
+    short: "DNS Recon",
+    icon: Globe2,
+    desc: "Enumerate DNS records and discover subdomains.",
+    hint: "Map a domain's footprint",
+  },
+  {
+    id: "ssl-inspect",
+    path: "/tools/ssl-inspect",
+    label: "SSL/TLS Certificate Inspector",
+    short: "SSL Inspector",
+    icon: LockKeyhole,
+    desc: "Inspect certificates and detect impersonation.",
+    hint: "Examine TLS certificates",
   },
   {
     id: "port-scan",
@@ -38,15 +50,6 @@ export const TOOLS = [
     hint: "Map exposed services on a host",
   },
   {
-    id: "hash-verify",
-    path: "/tools/hash-verify",
-    label: "Hash Verifier",
-    short: "Hash Verifier",
-    icon: Hash,
-    desc: "Compute & compare hashes for evidence integrity.",
-    hint: "Verify digital evidence",
-  },
-  {
     id: "ipv6-convert",
     path: "/tools/ipv6-convert",
     label: "IPv4 → IPv6 Converter",
@@ -56,6 +59,33 @@ export const TOOLS = [
     hint: "Translate IPv4 to IPv6",
   },
   {
+    id: "email-forensics",
+    path: "/tools/email-forensics",
+    label: "Email Header Forensics",
+    short: "Email Forensics",
+    icon: Mail,
+    desc: "Trace origin, detect spoofing and map routing.",
+    hint: "Analyse raw email headers",
+  },
+  {
+    id: "exif-forensics",
+    path: "/tools/exif-forensics",
+    label: "Image & EXIF Forensics",
+    short: "EXIF Forensics",
+    icon: Image,
+    desc: "Extract GPS, device and edit metadata from media.",
+    hint: "Inspect image metadata",
+  },
+  {
+    id: "hash-verify",
+    path: "/tools/hash-verify",
+    label: "Hash Verifier",
+    short: "Hash Verifier",
+    icon: Hash,
+    desc: "Compute & compare hashes for evidence integrity.",
+    hint: "Verify digital evidence",
+  },
+  {
     id: "breach-verify",
     path: "/tools/breach-check",
     label: "Password Breach Checker",
@@ -63,6 +93,24 @@ export const TOOLS = [
     icon: KeyRound,
     desc: "Check a password against known breach corpora (privacy-safe).",
     hint: "Test credentials for exposure",
+  },
+  {
+    id: "dark-web",
+    path: "/tools/dark-web",
+    label: "Dark Web Exposure",
+    short: "Dark Web",
+    icon: Bug,
+    desc: "AI exposure advisory for an email or domain.",
+    hint: "Assess breach / dark-web risk",
+  },
+  {
+    id: "imei-track",
+    path: "/tools/imei-track",
+    label: "IMEI / Device Analysis",
+    short: "IMEI Analysis",
+    icon: Smartphone,
+    desc: "Validate IMEI and guide lawful device tracing.",
+    hint: "Analyse a device IMEI",
   },
   {
     id: "case-report",
@@ -80,14 +128,9 @@ export const TOOL_MAP = TOOLS.reduce((acc, t) => ((acc[t.id] = t), acc), {});
 export const COMING_SOON = [
   { label: "Phone / UPI Fraud Lookup", desc: "Trace mobile numbers and UPI IDs linked to fraud." },
   { label: "Bulk IP / URL Analysis", desc: "Upload a CSV and triage indicators in batch." },
-  { label: "Dark Web Exposure Monitor", desc: "Watch breach dumps & forums for leaked data." },
   { label: "Crypto Wallet Tracer", desc: "Follow cryptocurrency fund flows across the blockchain." },
-  { label: "Image & EXIF Forensics", desc: "Extract GPS, device and edit metadata from media." },
   { label: "Social Media OSINT Profiler", desc: "Aggregate a suspect's public social footprint." },
-  { label: "WHOIS & Domain Intelligence", desc: "Pull registration, history and DNS records." },
-  { label: "SSL/TLS Certificate Inspector", desc: "Inspect certificates and detect impersonation." },
+  { label: "WHOIS & Domain Intelligence", desc: "Pull registration, history and ownership records." },
   { label: "Malware Sandbox Detonation", desc: "Detonate suspicious files in isolation safely." },
   { label: "Call Detail Record Analyzer", desc: "Visualise CDR / IPDR links and timelines." },
-  { label: "IMEI / Device Tracker", desc: "Resolve device identity and last-seen networks." },
-  { label: "DNS & Subdomain Recon", desc: "Enumerate subdomains and exposed assets." },
 ];

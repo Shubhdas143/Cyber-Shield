@@ -24,6 +24,11 @@ TOOL_LABELS = {
     "port-scan": "Network Port Scan Analysis",
     "ipv6-convert": "IPv4 to IPv6 Conversion",
     "breach-verify": "Password Breach Verification",
+    "exif-forensics": "Image & EXIF Metadata Forensics",
+    "dark-web": "Dark Web Exposure Advisory",
+    "ssl-inspect": "SSL/TLS Certificate Inspection",
+    "imei-track": "IMEI / Device Analysis",
+    "dns-recon": "DNS & Subdomain Reconnaissance",
 }
 
 

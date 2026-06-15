@@ -172,7 +172,67 @@ backend:
     status_history:
         -working: "NA"
         -agent: "main"
-        -comment: "Added port-scan, ipv6-convert, breach-verify to stats tool_breakdown and pdf_service TOOL_LABELS. History list/get/delete + /api/history/{id}/pdf should work for new tool types. Needs verification that PDF generation succeeds for each new tool_type."
+        -comment: "Added port-scan, ipv6-convert, breach-verify, exif-forensics, dark-web, ssl-inspect, imei-track, dns-recon to stats tool_breakdown and pdf_service TOOL_LABELS. History list/get/delete + /api/history/{id}/pdf should work for new tool types."
+
+  - task: "DNS & Subdomain Recon endpoint (POST /api/tools/dns-recon)"
+    implemented: true
+    working: "NA"
+    file: "routes_tools.py, dns_service.py, llm_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "dnspython async resolver: A/AAAA/MX/NS/TXT/CNAME/SOA + concurrent common-subdomain enumeration (48-word list). Then Claude assesses attack surface + risk. Verified standalone against github.com (resolved records + 14 subdomains). Invalid/non-resolving domain -> 400."
+
+  - task: "SSL/TLS Certificate Inspector endpoint (POST /api/tools/ssl-inspect)"
+    implemented: true
+    working: "NA"
+    file: "routes_tools.py, ssl_service.py, llm_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "ssl+socket handshake (CERT_NONE so expired/self-signed can be inspected), parsed with cryptography lib: subject/issuer CN, validity, days_until_expiry, self_signed, SAN, TLS version, cipher. Risk forced to high if expired/self-signed/not-yet-valid. Verified standalone against github.com. Bad host -> 400; TLS failure -> 502."
+
+  - task: "Image & EXIF Forensics endpoint (POST /api/tools/exif-forensics)"
+    implemented: true
+    working: "NA"
+    file: "routes_tools.py, exif_service.py, llm_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "Multipart image upload (like hash-file). Pillow extracts EXIF tags + GPS IFD; decodes lat/lon to decimal + maps_url. AI forensic note. risk_level null. Non-image -> 400, empty -> 400, >25MB -> 400. Note: a plain image with no EXIF should still return 200 with has_exif=false."
+
+  - task: "IMEI / Device Analysis endpoint (POST /api/tools/imei-track)"
+    implemented: true
+    working: "NA"
+    file: "routes_tools.py, imei_service.py, llm_service.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "Luhn validation + TAC/RBI/serial/check-digit breakdown for 15-digit (or 16 IMEISV). AI guidance on lawful CEIR/TSP tracing. risk_level null. Non-numeric or wrong length -> 400. Verified: 490154203237518 valid, 490154203237510 invalid."
+
+  - task: "Dark Web Exposure Advisory endpoint (POST /api/tools/dark-web)"
+    implemented: true
+    working: "NA"
+    file: "routes_tools.py, llm_service.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "AI-only advisory (NO live dark-web feed, NO fabricated breach records). Detects email vs domain by regex. Returns RISK_LEVEL + advisory + verification steps. Empty identifier -> 400."
 
 frontend:
   - task: "Port Scanner page (/tools/port-scan)"
@@ -235,6 +295,11 @@ test_plan:
     - "IPv4 to IPv6 converter endpoint (POST /api/tools/ipv6-convert)"
     - "Password Breach Checker endpoint (POST /api/tools/breach-check)"
     - "Tools Directory catalog endpoint (GET /api/catalog/tools)"
+    - "DNS & Subdomain Recon endpoint (POST /api/tools/dns-recon)"
+    - "SSL/TLS Certificate Inspector endpoint (POST /api/tools/ssl-inspect)"
+    - "Image & EXIF Forensics endpoint (POST /api/tools/exif-forensics)"
+    - "IMEI / Device Analysis endpoint (POST /api/tools/imei-track)"
+    - "Dark Web Exposure Advisory endpoint (POST /api/tools/dark-web)"
     - "New tool types in history, stats breakdown, and PDF labels"
   stuck_tasks: []
   test_all: false
@@ -243,11 +308,27 @@ test_plan:
 agent_communication:
     -agent: "main"
     -message: |
-      Please test ONLY the new backend endpoints (do not retest the 5 pre-existing tools unless needed for history/stats/pdf verification).
-      Auth: POST /api/auth/login with {officer_id:"amroha001", password:"cyber@123"} -> use returned access_token as Bearer for all /api/tools/* and /api/catalog/* calls.
-      1) POST /api/tools/port-scan: (a) {target:"scanme.nmap.org", mode:"common"} should return 200 with meta.ip, meta.open_ports (expect 22 & 80 open), risk_level set, result_markdown present. (b) {target:"scanme.nmap.org", mode:"common_range", start_port:75, end_port:90} should include the range. (c) invalid host like {target:"thishostdoesnotexist.invalid", mode:"common"} -> 400. (d) bad range (start>end) -> 400.
-      2) POST /api/tools/ipv6-convert: {ip:"103.21.58.10"} -> 200 with meta.conversions.ipv4_mapped == "::ffff:103.21.58.10" and sixto4_prefix "2002:6715:3a0a::/48". Invalid {ip:"999.1.1.1"} -> 400. risk_level should be null.
-      3) POST /api/tools/breach-check: {password:"password"} -> 200, meta.found true, meta.count large, risk_level "critical" or "high". {password:"<random strong 20-char>"} -> meta.found false, risk_level "clean". IMPORTANT: confirm the saved analysis does NOT store plaintext (GET /api/history/{id} input should only have length+note, not the password).
-      4) GET /api/catalog/tools -> 200 with count==32, 4 types, categories list. Confirm 401 without token.
-      5) After running tools, GET /api/history should list the new analyses; GET /api/stats tool_breakdown should include port-scan/ipv6-convert/breach-verify counts; GET /api/history/{id}/pdf should return a valid application/pdf for each new tool_type.
-      Note: env files were recreated by main agent; backend is running and seeded officer exists.
+      Round 2: 5 MORE backend tools were added on top of the first batch. Please test ALL the NEW endpoints
+      (do not retest the 5 original tools: ip-intel, url-scan, email-forensics, hash-*, case-report).
+      Auth: POST /api/auth/login {officer_id:"amroha001", password:"cyber@123"} -> Bearer token for all calls.
+      Use REACT_APP_BACKEND_URL + /api prefix.
+
+      BATCH 1 (re-verify, was not tested in prior run):
+      1) POST /api/tools/port-scan {target:"scanme.nmap.org", mode:"common"} -> 200, meta.open_ports incl 22 & 80, risk set. Also mode "common_range" {start_port:75,end_port:90}. Invalid host -> 400; start>end -> 400.
+      2) POST /api/tools/ipv6-convert {ip:"103.21.58.10"} -> meta.conversions.ipv4_mapped=="::ffff:103.21.58.10", sixto4_prefix=="2002:6715:3a0a::/48", risk null. {ip:"999.1.1.1"} -> 400.
+      3) POST /api/tools/breach-check {password:"password"} -> found true, big count, risk critical/high. Strong random -> clean. PRIVACY: GET /api/history/{id} input must NOT contain plaintext (only length+note).
+      4) GET /api/catalog/tools -> 200 count==32, 4 types. No token -> 401/403.
+
+      BATCH 2 (new):
+      5) POST /api/tools/dns-recon {domain:"github.com"} -> 200, meta.records has A & NS populated, meta.subdomains non-empty, result_markdown present. Non-resolving {domain:"nope.invalidtld"} -> 400 (or 502).
+      6) POST /api/tools/ssl-inspect {host:"github.com"} -> 200, meta.certificate.subject_cn set, days_until_expiry int, is_expired false. {host:"expired.badssl.com"} -> 200 with meta.certificate.is_expired true and risk_level high. Bad host -> 400.
+      7) POST /api/tools/exif-forensics -> multipart form-data with field "file". (a) Upload a JPEG (you can generate one with Pillow). Expect 200, tool_type exif-forensics, meta.has_exif present, risk_level null. (b) Upload a non-image (e.g., a .txt) -> 400.
+      8) POST /api/tools/imei-track {imei:"490154203237518"} -> 200 meta.luhn_valid true. {imei:"490154203237510"} -> 200 meta.luhn_valid false. {imei:"123"} -> 400. risk null.
+      9) POST /api/tools/dark-web {identifier:"victim@example.com"} -> 200, meta.kind=="email", risk_level set, advisory markdown. {identifier:"example.com"} -> meta.kind=="domain". Empty -> 400.
+
+      INTEGRATION:
+      10) GET /api/stats tool_breakdown must include keys: port-scan, ipv6-convert, breach-verify, dns-recon, ssl-inspect, exif-forensics, imei-track, dark-web.
+      11) GET /api/history/{id}/pdf for ONE analysis of EACH new tool_type -> 200, application/pdf, non-empty (verify PDF doesn't crash for any new tool_type, including those with large meta like dns-recon/ssl-inspect/exif-forensics).
+
+      Notes: LLM calls (Claude via Emergent key) take a few seconds each; ipv6-convert & exif GPS decode are deterministic. External egress (DNS/TCP/TLS/HIBP) is confirmed working in this environment.
+

@@ -14,6 +14,11 @@ import CaseReport from "@/pages/tools/CaseReport";
 import PortScan from "@/pages/tools/PortScan";
 import IPv6Convert from "@/pages/tools/IPv6Convert";
 import BreachCheck from "@/pages/tools/BreachCheck";
+import DNSRecon from "@/pages/tools/DNSRecon";
+import SSLInspect from "@/pages/tools/SSLInspect";
+import ExifForensics from "@/pages/tools/ExifForensics";
+import IMEITrack from "@/pages/tools/IMEITrack";
+import DarkWeb from "@/pages/tools/DarkWeb";
 import ToolsDirectory from "@/pages/ToolsDirectory";
 import HistoryPage from "@/pages/History";
 import AnalysisDetail from "@/pages/AnalysisDetail";
@@ -45,6 +50,11 @@ function AppRoutes() {
       <Route path="/tools/port-scan" element={<Protected><PortScan /></Protected>} />
       <Route path="/tools/ipv6-convert" element={<Protected><IPv6Convert /></Protected>} />
       <Route path="/tools/breach-check" element={<Protected><BreachCheck /></Protected>} />
+      <Route path="/tools/dns-recon" element={<Protected><DNSRecon /></Protected>} />
+      <Route path="/tools/ssl-inspect" element={<Protected><SSLInspect /></Protected>} />
+      <Route path="/tools/exif-forensics" element={<Protected><ExifForensics /></Protected>} />
+      <Route path="/tools/imei-track" element={<Protected><IMEITrack /></Protected>} />
+      <Route path="/tools/dark-web" element={<Protected><DarkWeb /></Protected>} />
       <Route path="/tools/case-report" element={<Protected><CaseReport /></Protected>} />
       <Route path="/tools-directory" element={<Protected><ToolsDirectory /></Protected>} />
       <Route path="/history" element={<Protected><HistoryPage /></Protected>} />
