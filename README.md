@@ -6,7 +6,7 @@ Every analysis is logged to investigation **History**, can be linked to a **Case
 
 ---
 
-## Quick Start
+## Quick Start 
 
 The app runs under `supervisor` (do not start servers manually):
 
